@@ -26,6 +26,7 @@
             --border: #dcdde1;
             --success: #2ecc71;
             --error: #e74c3c;
+            --warning: #e67e22;
         }
         body {
             background-color: var(--bg-color);
@@ -42,29 +43,78 @@
             border: 1px dashed var(--border);
             border-radius: 8px;
             padding: 24px;
+            overflow-x: auto;
         }
         .token-blocks {
-            font-size: 40px;
+            font-size: 32px;
             font-weight: bold;
             color: var(--accent);
-            letter-spacing: 3px;
+            letter-spacing: 2px;
+            white-space: nowrap;
         }
-        .token-separator { margin: 0 12px; color: #bdc3c7; font-size: 42px; }
+        .token-separator { display: inline-block; width: 22px; }
         .time-left { font-size: 14px; color: #7f8c8d; margin-top: 12px; }
 
+        .copy-code-btn {
+            background-color: var(--warning);
+            border: none;
+            color: #fff;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: 10px;
+            vertical-align: middle;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+        }
+        .copy-code-btn:hover { background-color: #d35400; }
+        .copy-code-btn:active { transform: scale(0.92); }
+        .copy-code-btn.copied { background-color: var(--success); }
+        .copy-code-btn svg { width: 16px; height: 16px; }
+        .copy-raw-btn {
+            background-color: #8e44ad;
+            border: none;
+            color: #fff;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: 6px;
+            vertical-align: middle;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+        }
+        .copy-raw-btn:hover { background-color: #6c3483; }
+        .copy-raw-btn:active { transform: scale(0.92); }
+        .copy-raw-btn.copied { background-color: var(--success); }
+        .copy-raw-btn svg { width: 16px; height: 16px; }
+
         .result-box {
-            padding: 15px;
-            border-radius: 6px;
+            padding: 22px;
+            border-radius: 8px;
             font-weight: bold;
+            font-size: 22px;
+            line-height: 1.3;
             margin-top: 20px;
         }
-        .result-box.valid { background-color: #e8f8f0; color: var(--success); border: 1px solid var(--success); }
-        .result-box.invalid { background-color: #fdedec; color: var(--error); border: 1px solid var(--error); }
+        .result-box.valid { background-color: #e8f8f0; color: var(--success); border: 2px solid var(--success); }
+        .result-box.invalid { background-color: #fdedec; color: var(--error); border: 2px solid var(--error); }
 
         .nav-link.active {
             background-color: var(--accent);
             color: white !important;
             border-radius: 6px;
+        }
+        .navbar-field-label {
+            color: #adb5bd;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
         }
         .dataTables_wrapper .dataTables_paginate .paginate_button {
             padding: 0.3rem 0.7rem !important;
@@ -74,6 +124,12 @@
         }
         .select2-container--bootstrap-5 .select2-selection {
             min-height: 38px;
+        }
+        #navbarNav .select2-container {
+            width: 220px !important;
+        }
+        #navbarNav .select2-container--bootstrap-5 .select2-selection {
+            min-height: 31px;
         }
         .dt-buttons {
             margin-bottom: 1rem;
@@ -111,15 +167,23 @@
 
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="#">🔑 TOPT 24h</a>
+        <div class="container-xl">
+            <a class="navbar-brand fw-bold" href="#" onclick="showPage(1)">🔑 TOPT 24h</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <div class="d-flex align-items-center ms-auto gap-3 flex-wrap">
+                <div class="d-flex align-items-center ms-auto gap-3 flex-wrap py-2 py-lg-0">
                     <div class="d-flex align-items-center gap-2">
-                        <label for="methodSelect" class="nav-link mb-0 py-0">Método</label>
+                        <label for="secretInput" class="navbar-field-label mb-0">Clave Secreta</label>
+                        <select id="secretInput" class="form-control form-control-sm" style="width: 220px;"></select>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="dateInput" class="navbar-field-label mb-0">Fecha</label>
+                        <input type="date" id="dateInput" class="form-control form-control-sm" style="width: auto;">
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="methodSelect" class="navbar-field-label mb-0">Método</label>
                         <select id="methodSelect" class="form-select form-select-sm" style="width: auto;">
                             <option value="totp" selected>TOTP (6 dígitos)</option>
                             <option value="pass">Pass (16 alfanuméricos)</option>
@@ -134,7 +198,7 @@
         </div>
     </nav>
 
-    <div class="container my-5">
+    <div class="container-xl my-5">
 
         <!-- PÁGINA 1: Hoy / Fecha -->
         <div id="page1" class="page">
@@ -142,28 +206,34 @@
                 <div class="col-12 col-md-6">
                     <div class="card main-card p-4 p-md-5">
                         <h2 class="text-center mb-4">Generador TOPT</h2>
-                        <p class="text-muted text-center mb-4">Selecciona la fecha</p>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Clave Secreta (ASCII)</label>
-                            <select id="secretInput" class="form-control"></select>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">Fecha</label>
-                            <input type="date" id="dateInput" class="form-control">
-                        </div>
+                        <p class="text-muted text-center mb-4">Usa la clave y fecha de la barra superior</p>
 
                         <div class="token-display text-center">
                             <div class="token-label mb-3">CÓDIGO</div>
-                            <div id="tokenBlocksWrap" class="d-flex justify-content-center align-items-center flex-wrap">
-                                <span id="block1" class="token-blocks">---</span>
-                                <span id="separator1" class="token-separator">-</span>
-                                <span id="block2" class="token-blocks">---</span>
-                                <span id="separator2" class="token-separator" style="display:none;">-</span>
-                                <span id="block3" class="token-blocks" style="display:none;">----</span>
-                                <span id="separator3" class="token-separator" style="display:none;">-</span>
-                                <span id="block4" class="token-blocks" style="display:none;">----</span>
+                            <div class="d-flex justify-content-center align-items-center">
+                                <div id="tokenBlocksWrap" class="d-flex justify-content-center align-items-center">
+                                    <span id="block1" class="token-blocks">---</span>
+                                    <span id="separator1" class="token-separator"></span>
+                                    <span id="block2" class="token-blocks">---</span>
+                                    <span id="separator2" class="token-separator" style="display:none;"></span>
+                                    <span id="block3" class="token-blocks" style="display:none;">----</span>
+                                    <span id="separator3" class="token-separator" style="display:none;"></span>
+                                    <span id="block4" class="token-blocks" style="display:none;">----</span>
+                                </div>
+                                <button id="copyCodeBtn" class="copy-code-btn" type="button" title="Copiar código con espacios" onclick="copyGeneratedCode()">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                </button>
+                                <button id="copyRawBtn" class="copy-raw-btn" type="button" title="Copiar código sin espacios" onclick="copyGeneratedCodeRaw()">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                        <line x1="12" y1="5" x2="12" y2="1"></line>
+                                        <line x1="9" y1="2" x2="15" y2="2"></line>
+                                    </svg>
+                                </button>
                             </div>
                             <div id="timeLeft" class="time-left">Selecciona fecha y clave</div>
                         </div>
@@ -173,21 +243,11 @@
                 <div class="col-12 col-md-6">
                     <div class="card main-card p-4 p-md-5">
                         <h2 class="text-center mb-4">Validador TOPT</h2>
-                        <p class="text-muted text-center mb-4">Verifica un código</p>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Clave Secreta</label>
-                            <select id="valSecretInput" class="form-control"></select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Fecha</label>
-                            <input type="date" id="valDateInput" class="form-control">
-                        </div>
+                        <p class="text-muted text-center mb-4">Usa la clave y fecha de la barra superior</p>
 
                         <div class="mb-4">
                             <label id="valCodeLabel" class="form-label fw-semibold">Código de 6 dígitos</label>
-                            <input type="text" id="valCodeInput" class="form-control text-center fs-4 fw-bold" placeholder="000000" maxlength="6">
+                            <input type="text" id="valCodeInput" class="form-control text-center fs-4 fw-bold" placeholder="000-000" maxlength="8">
                         </div>
 
                         <div id="resultBox" class="result-box text-center"></div>
@@ -200,18 +260,14 @@
         <div id="page2" class="page" style="display: none;">
             <div class="card main-card p-4 p-md-5">
                 <h2 class="text-center mb-4">Generador CSV - Todo el Año</h2>
-                <p class="text-muted text-center mb-4">Desde el 1 de enero hasta el 31 de diciembre</p>
+                <p class="text-muted text-center mb-4">Usa la clave de la barra superior. Desde el 1 de enero hasta el 31 de diciembre</p>
 
-                <div class="row mb-4 g-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Clave Secreta (ASCII)</label>
-                        <select id="secretInput3" class="form-control"></select>
-                    </div>
-                    <div class="col-md-3">
+                <div class="row mb-4 g-3 justify-content-center">
+                    <div class="col-md-5">
                         <label class="form-label fw-semibold">Año</label>
                         <input type="number" id="yearInput" class="form-control" min="2020" max="2100" value="2026">
                     </div>
-                    <div class="col-md-3 d-flex align-items-end">
+                    <div class="col-md-5 d-flex align-items-end">
                         <button onclick="generateYearCSV()" class="btn btn-primary w-100">Generar CSV</button>
                     </div>
                 </div>
@@ -319,7 +375,7 @@
     // ==================== HISTORIAL DE CLAVES SECRETAS (Select2) ====================
     const SECRET_HISTORY_KEY = 'totp_secret_history';
     const MAX_SECRET_HISTORY = 5;
-    const SECRET_SELECT_IDS = ['secretInput', 'valSecretInput', 'secretInput3'];
+    const SECRET_SELECT_IDS = ['secretInput'];
 
     function getSecretHistory() {
         try {
@@ -374,16 +430,6 @@
         });
     }
 
-    // Copia un valor a otro select (creando la opción si no existe) usando un
-    // evento con namespace propio, para no disparar nuestros handlers 'change.appSecret'.
-    function mirrorSecretValue(val, targetId) {
-        const $target = $('#' + targetId);
-        if ($target.find('option').filter(function () { return this.value === val; }).length === 0) {
-            $target.append(new Option(val, val));
-        }
-        $target.val(val).trigger('change.select2');
-    }
-
     // ==================== SELECTOR DE MÉTODO (TOTP / Pass) ====================
     const METHOD_STORAGE_KEY = 'totp_app_method';
 
@@ -395,12 +441,12 @@
 
         if (method === 'pass') {
             codeLabel.textContent = 'Código de 16 alfanuméricos';
-            codeInput.setAttribute('maxlength', '16');
-            codeInput.setAttribute('placeholder', 'AbCd1234EfGh5678');
+            codeInput.setAttribute('maxlength', '20');
+            codeInput.setAttribute('placeholder', 'AbCd 1234 EfGh 5678');
         } else {
             codeLabel.textContent = 'Código de 6 dígitos';
-            codeInput.setAttribute('maxlength', '6');
-            codeInput.setAttribute('placeholder', '000000');
+            codeInput.setAttribute('maxlength', '8');
+            codeInput.setAttribute('placeholder', '000 000');
         }
         codeInput.value = '';
 
@@ -433,7 +479,11 @@
     }
 
     // ==================== PÁGINA 1 ====================
+    // Código generado actualmente (sin separadores), usado para copiar al portapapeles
+    let currentGeneratedCode = null;
+
     function renderTokenBlocks(token, method) {
+        currentGeneratedCode = token || null;
         const b1 = document.getElementById('block1');
         const b2 = document.getElementById('block2');
         const b3 = document.getElementById('block3');
@@ -472,6 +522,7 @@
         if (!secret || !dateStr) {
             renderTokenBlocks(null, method);
             document.getElementById('timeLeft').textContent = "Completa clave y fecha";
+            validateCode();
             return;
         }
 
@@ -488,9 +539,72 @@
         validateCode();
     }
 
+    // Formatea un código insertando espacios entre bloques: 2 bloques de 3 (TOTP) o 4 bloques de 4 (pass)
+    function formatCodeWithSpaces(code, method) {
+        if (!code) return '';
+        const groupSize = method === 'pass' ? 4 : 3;
+        const regex = new RegExp(`(.{${groupSize}})`, 'g');
+        return code.replace(regex, '$1 ').trim();
+    }
+
+    // Copia el código actualmente generado al portapapeles, agrupado según el método activo
+    async function copyGeneratedCode() {
+        const btn = document.getElementById('copyCodeBtn');
+        if (!currentGeneratedCode) return;
+
+        const method = getCurrentMethod();
+        const formatted = formatCodeWithSpaces(currentGeneratedCode, method);
+
+        try {
+            await navigator.clipboard.writeText(formatted);
+        } catch (e) {
+            // Fallback por si la API de clipboard no está disponible
+            const tempInput = document.createElement('textarea');
+            tempInput.value = formatted;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+        }
+
+        if (btn) {
+            btn.classList.add('copied');
+            btn.title = '¡Copiado!';
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                btn.title = 'Copiar código';
+            }, 1500);
+        }
+    }
+
+    async function copyGeneratedCodeRaw() {
+        const btn = document.getElementById('copyRawBtn');
+        if (!currentGeneratedCode) return;
+
+        try {
+            await navigator.clipboard.writeText(currentGeneratedCode);
+        } catch (e) {
+            const tempInput = document.createElement('textarea');
+            tempInput.value = currentGeneratedCode;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+        }
+
+        if (btn) {
+            btn.classList.add('copied');
+            btn.title = '¡Copiado!';
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                btn.title = 'Copiar código sin espacios';
+            }, 1500);
+        }
+    }
+
     async function validateCode() {
-        const secret = document.getElementById('valSecretInput').value.trim();
-        const dateStr = document.getElementById('valDateInput').value;
+        const secret = document.getElementById('secretInput').value.trim();
+        const dateStr = document.getElementById('dateInput').value;
         const method = getCurrentMethod();
         const rawCode = document.getElementById('valCodeInput').value.trim();
         const code = method === 'pass'
@@ -525,7 +639,7 @@
     let dataTableInstance = null;
 
     async function generateYearCSV() {
-        const secret = document.getElementById('secretInput3').value.trim();
+        const secret = document.getElementById('secretInput').value.trim();
         const year = parseInt(document.getElementById('yearInput').value);
         const method = getCurrentMethod();
         const status = document.getElementById('status3');
@@ -620,7 +734,7 @@
             localStorage.setItem(SECRET_HISTORY_KEY, JSON.stringify(history));
         }
 
-        // Construye las opciones iniciales y activa Select2 en los 3 campos de clave
+        // Construye las opciones iniciales y activa Select2 en el campo de clave (navbar)
         SECRET_SELECT_IDS.forEach(id => {
             const $sel = $('#' + id);
             history.forEach(val => {
@@ -630,7 +744,6 @@
         });
 
         document.getElementById('dateInput').value = today;
-        document.getElementById('valDateInput').value = today;
         document.getElementById('yearInput').value = new Date().getFullYear();
 
         // Restaura el método (TOTP/Pass) elegido la última vez
@@ -641,25 +754,15 @@
 
         showPage(1);
 
-        // Eventos Página 1: clave secreta (Select2, con historial)
+        // Evento: clave secreta global (Select2, con historial)
         $('#secretInput').on('change.appSecret', function () {
             const val = $(this).val() || '';
-            mirrorSecretValue(val, 'valSecretInput');
-            localStorage.setItem('totp_ascii_secret', val);
-            addToSecretHistory(val);
-            updateGenerator();
-        });
-
-        $('#valSecretInput').on('change.appSecret', function () {
-            const val = $(this).val() || '';
-            mirrorSecretValue(val, 'secretInput');
             localStorage.setItem('totp_ascii_secret', val);
             addToSecretHistory(val);
             updateGenerator();
         });
 
         document.getElementById('dateInput').addEventListener('change', updateGenerator);
-        document.getElementById('valDateInput').addEventListener('change', validateCode);
         document.getElementById('valCodeInput').addEventListener('input', validateCode);
         document.getElementById('methodSelect').addEventListener('change', updateMethodUI);
 
@@ -668,13 +771,6 @@
                 updateGenerator();
             }
         }, 1000);
-
-        // Eventos Página 2: clave secreta (Select2, con historial)
-        $('#secretInput3').on('change.appSecret', function () {
-            const val = $(this).val() || '';
-            localStorage.setItem('totp_ascii_secret', val);
-            addToSecretHistory(val);
-        });
 
         // Aplica el método (TOTP/Pass) ya cargado en el select y refresca toda la UI
         updateMethodUI();
