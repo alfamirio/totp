@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel TOPT 24 Horas</title>
+    <title>TOTP 24-Hour Panel</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- DataTables CSS -->
@@ -11,7 +11,7 @@
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
-    <!-- DataTables Buttons CSS (exportación CSV / PDF) -->
+    <!-- DataTables Buttons CSS (CSV / PDF export) -->
     <link href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css" rel="stylesheet">
 
     <script src="https://unpkg.com/@otplib/preset-browser@12.0.1/buffer.js"></script>
@@ -175,23 +175,23 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <div class="d-flex align-items-center ms-auto gap-3 flex-wrap py-2 py-lg-0">
                     <div class="d-flex align-items-center gap-2">
-                        <label for="secretInput" class="navbar-field-label mb-0">Clave Secreta</label>
+                        <label for="secretInput" class="navbar-field-label mb-0">Secret Key</label>
                         <select id="secretInput" class="form-control form-control-sm" style="width: 220px;"></select>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <label for="dateInput" class="navbar-field-label mb-0">Fecha</label>
+                        <label for="dateInput" class="navbar-field-label mb-0">Date</label>
                         <input type="date" id="dateInput" class="form-control form-control-sm" style="width: auto;">
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <label for="methodSelect" class="navbar-field-label mb-0">Método</label>
+                        <label for="methodSelect" class="navbar-field-label mb-0">Method</label>
                         <select id="methodSelect" class="form-select form-select-sm" style="width: auto;">
-                            <option value="totp" selected>TOTP (6 dígitos)</option>
-                            <option value="pass">Pass (12 alfanuméricos)</option>
+                            <option value="totp" selected>TOTP (6 digits)</option>
+                            <option value="pass">Pass (12 alphanumeric)</option>
                         </select>
                     </div>
                     <ul class="navbar-nav">
-                        <li class="nav-item"><a class="nav-link active" href="#" onclick="showPage(1)">Hoy / Fecha</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#" onclick="showPage(2)">Año Completo</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="#" onclick="showPage(1)">Today / Date</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#" onclick="showPage(2)">Full Year</a></li>
                     </ul>
                 </div>
             </div>
@@ -200,16 +200,16 @@
 
     <div class="container-xl my-5">
 
-        <!-- PÁGINA 1: Hoy / Fecha -->
+        <!-- PAGE 1: Today / Date -->
         <div id="page1" class="page">
             <div class="row g-5">
                 <div class="col-12 col-md-6">
                     <div class="card main-card p-4 p-md-5">
-                        <h2 class="text-center mb-4">Generador TOPT</h2>
-                        <p class="text-muted text-center mb-4">Usa la clave y fecha de la barra superior</p>
+                        <h2 class="text-center mb-4">TOTP Generator</h2>
+                        <p class="text-muted text-center mb-4">Use the key and date from the top bar</p>
 
                         <div class="token-display text-center">
-                            <div class="token-label mb-3">CÓDIGO</div>
+                            <div class="token-label mb-3">CODE</div>
                             <div class="d-flex justify-content-center align-items-center">
                                 <div id="tokenBlocksWrap" class="d-flex justify-content-center align-items-center">
                                     <span id="block1" class="token-blocks">---</span>
@@ -220,13 +220,13 @@
                                     <span id="separator3" class="token-separator" style="display:none;"></span>
                                     <span id="block4" class="token-blocks" style="display:none;">----</span>
                                 </div>
-                                <button id="copyCodeBtn" class="copy-code-btn" type="button" title="Copiar código con espacios" onclick="copyGeneratedCode()">
+                                <button id="copyCodeBtn" class="copy-code-btn" type="button" title="Copy code with spaces" onclick="copyGeneratedCode()">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <rect x="9" y="9" width="13" height="13" rx="2"></rect>
                                         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                                     </svg>
                                 </button>
-                                <button id="copyRawBtn" class="copy-raw-btn" type="button" title="Copiar código sin espacios" onclick="copyGeneratedCodeRaw()">
+                                <button id="copyRawBtn" class="copy-raw-btn" type="button" title="Copy code without spaces" onclick="copyGeneratedCodeRaw()">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <rect x="9" y="9" width="13" height="13" rx="2"></rect>
                                         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -235,18 +235,18 @@
                                     </svg>
                                 </button>
                             </div>
-                            <div id="timeLeft" class="time-left">Selecciona fecha y clave</div>
+                            <div id="timeLeft" class="time-left">Select date and key</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-12 col-md-6">
                     <div class="card main-card p-4 p-md-5">
-                        <h2 class="text-center mb-4">Validador TOPT</h2>
-                        <p class="text-muted text-center mb-4">Usa la clave y fecha de la barra superior</p>
+                        <h2 class="text-center mb-4">TOTP Validator</h2>
+                        <p class="text-muted text-center mb-4">Use the key and date from the top bar</p>
 
                         <div class="mb-4">
-                            <label id="valCodeLabel" class="form-label fw-semibold">Código de 6 dígitos</label>
+                            <label id="valCodeLabel" class="form-label fw-semibold">6-digit code</label>
                             <input type="text" id="valCodeInput" class="form-control text-center fs-4 fw-bold" placeholder="000-000" maxlength="8">
                         </div>
 
@@ -256,19 +256,19 @@
             </div>
         </div>
 
-        <!-- PÁGINA 2: Año Completo con DataTables -->
+        <!-- PAGE 2: Full Year with DataTables -->
         <div id="page2" class="page" style="display: none;">
             <div class="card main-card p-4 p-md-5">
-                <h2 class="text-center mb-4">Generador CSV - Todo el Año</h2>
-                <p class="text-muted text-center mb-4">Usa la clave de la barra superior. Desde el 1 de enero hasta el 31 de diciembre</p>
+                <h2 class="text-center mb-4">CSV Generator - Full Year</h2>
+                <p class="text-muted text-center mb-4">Uses the key from the top bar. From January 1st to December 31st</p>
 
                 <div class="row mb-4 g-3 justify-content-center">
                     <div class="col-md-5">
-                        <label class="form-label fw-semibold">Año</label>
+                        <label class="form-label fw-semibold">Year</label>
                         <input type="number" id="yearInput" class="form-control" min="2020" max="2100" value="2026">
                     </div>
                     <div class="col-md-5 d-flex align-items-end">
-                        <button onclick="generateYearCSV()" class="btn btn-primary w-100">Generar CSV</button>
+                        <button onclick="generateYearCSV()" class="btn btn-primary w-100">Generate CSV</button>
                     </div>
                 </div>
 
@@ -276,7 +276,7 @@
                     <table id="yearTable" class="table table-striped table-hover" style="width:100%">
                         <thead class="table-dark">
                             <tr>
-                                <th>Fecha</th>
+                                <th>Date</th>
                                 <th id="yearCodeHeader">Código</th>
                             </tr>
                         </thead>
@@ -293,7 +293,7 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-    <!-- DataTables Buttons (exportación CSV / PDF) -->
+    <!-- DataTables Buttons (CSV / PDF export) -->
     <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
@@ -302,7 +302,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
 
     <script>
-    // ==================== UTILIDADES ====================
+    // ==================== UTILITIES ====================
     async function waitForOtplib() {
         if (window.otplib) return;
         return new Promise(resolve => {
@@ -340,14 +340,14 @@
         return otplib.hotp.generate(secretBase32, dayCounter);
     }
 
-    // Genera una clave alfanumérica diaria de 12 caracteres (mayúsculas, minúsculas y dígitos),
-    // derivada de forma determinista de la clave secreta + el día (igual principio que TOTP).
+    // Generates a daily 12-character alphanumeric key (uppercase, lowercase, and digits),
+    // deterministically derived from the secret key + the day (same principle as TOTP).
     async function generatePass(secretText, targetDate) {
         if (!secretText?.trim()) return null;
         const dayCounter = Math.floor(targetDate.getTime() / 86400000);
         const encoder = new TextEncoder();
-        // Se mezcla el contador de día en el material a hashear para que cada día tenga
-        // una clave distinta y reproducible (igual fecha + igual clave = igual resultado).
+        // The day counter is mixed into the hashed material so that each day has
+        // a distinct and reproducible key (same date + same key = same result).
         const data = encoder.encode(secretText.trim() + "::pass::" + dayCounter);
         const hashBuffer = await crypto.subtle.digest('SHA-256', data);
         const hashBytes = new Uint8Array(hashBuffer);
@@ -360,19 +360,19 @@
         return result;
     }
 
-    // Devuelve el método actualmente seleccionado: 'totp' o 'pass'
+    // Returns the currently selected method: 'totp' or 'pass'
     function getCurrentMethod() {
         const el = document.getElementById('methodSelect');
         return el ? el.value : 'totp';
     }
 
-    // Genera el código según el método activo
+    // Generates the code based on the active method
     async function generateCode(secretText, targetDate, method) {
         const m = method || getCurrentMethod();
         return m === 'pass' ? generatePass(secretText, targetDate) : generateTOTP(secretText, targetDate);
     }
 
-    // ==================== HISTORIAL DE CLAVES SECRETAS (Select2) ====================
+    // ==================== SECRET KEY HISTORY (Select2) ====================
     const SECRET_HISTORY_KEY = 'totp_secret_history';
     const MAX_SECRET_HISTORY = 5;
     const SECRET_SELECT_IDS = ['secretInput'];
@@ -387,8 +387,8 @@
         }
     }
 
-    // Añade una clave al historial (más reciente primero, sin duplicados, máx. 5)
-    // y refresca las opciones disponibles en los 3 selects.
+    // Adds a key to history (most recent first, no duplicates, max 5)
+    // and refreshes the available options in all selects.
     function addToSecretHistory(secret) {
         if (!secret) return;
         let history = getSecretHistory().filter(s => s !== secret);
@@ -398,8 +398,8 @@
         rebuildSecretSelectOptions();
     }
 
-    // Reconstruye las <option> de los 3 selects a partir del historial,
-    // conservando el valor seleccionado actualmente en cada uno.
+    // Rebuilds the <option> elements from history,
+    // preserving the currently selected value in each one.
     function rebuildSecretSelectOptions() {
         const history = getSecretHistory();
         SECRET_SELECT_IDS.forEach(id => {
@@ -422,15 +422,15 @@
             theme: 'bootstrap-5',
             tags: true,
             width: '100%',
-            placeholder: 'Ej: mi-clave-secreta-123',
+            placeholder: 'E.g.: my-secret-key-123',
             language: {
-                noResults: () => 'Escribe para crear una clave nueva',
-                searching: () => 'Buscando…'
+                noResults: () => 'Type to create a new key',
+                searching: () => 'Searching…'
             }
         });
     }
 
-    // ==================== SELECTOR DE MÉTODO (TOTP / Pass) ====================
+    // ==================== METHOD SELECTOR (TOTP / Pass) ====================
     const METHOD_STORAGE_KEY = 'totp_app_method';
 
     function updateMethodUI() {
@@ -440,11 +440,11 @@
         const codeLabel = document.getElementById('valCodeLabel');
 
         if (method === 'pass') {
-            codeLabel.textContent = 'Código de 12 alfanuméricos';
+            codeLabel.textContent = '12-character alphanumeric code';
             codeInput.setAttribute('maxlength', '14');
             codeInput.setAttribute('placeholder', 'AbCd 1234 EfGh');
         } else {
-            codeLabel.textContent = 'Código de 6 dígitos';
+            codeLabel.textContent = '6-digit code';
             codeInput.setAttribute('maxlength', '8');
             codeInput.setAttribute('placeholder', '000 000');
         }
@@ -465,21 +465,21 @@
         validateCode();
     }
 
-    // ==================== NAVEGACIÓN ====================
+    // ==================== NAVIGATION ====================
     function showPage(page) {
         document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
         document.getElementById(`page${page}`).style.display = 'block';
 
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.toggle('active', 
-                (page === 1 && link.textContent.includes('Hoy')) || 
-                (page === 2 && link.textContent === 'Año Completo')
+                (page === 1 && link.textContent.includes('Today')) || 
+                (page === 2 && link.textContent === 'Full Year')
             );
         });
     }
 
-    // ==================== PÁGINA 1 ====================
-    // Código generado actualmente (sin separadores), usado para copiar al portapapeles
+    // ==================== PAGE 1 ====================
+    // Currently generated code (without separators), used for clipboard copy
     let currentGeneratedCode = null;
 
     function renderTokenBlocks(token, method) {
@@ -493,7 +493,7 @@
         const s3 = document.getElementById('separator3');
 
         if (method === 'pass') {
-            // 3 bloques de 4 caracteres
+            // 3 blocks of 4 characters
             b1.textContent = token ? token.substring(0, 4) : "----";
             b2.textContent = token ? token.substring(4, 8) : "----";
             b3.textContent = token ? token.substring(8, 12) : "----";
@@ -502,7 +502,7 @@
             s2.style.display = "inline";
             s3.style.display = "none";
         } else {
-            // 2 bloques de 3 dígitos (comportamiento original TOTP)
+            // 2 blocks of 3 digits (original TOTP behavior)
             b1.textContent = token ? token.substring(0, 3) : "---";
             b2.textContent = token ? token.substring(3, 6) : "---";
             b3.style.display = "none";
@@ -520,7 +520,7 @@
 
         if (!secret || !dateStr) {
             renderTokenBlocks(null, method);
-            document.getElementById('timeLeft').textContent = "Completa clave y fecha";
+            document.getElementById('timeLeft').textContent = "Enter key and date";
             validateCode();
             return;
         }
@@ -532,13 +532,13 @@
             renderTokenBlocks(token, method);
             const isToday = dateStr === new Date().toISOString().split('T')[0];
             document.getElementById('timeLeft').textContent = isToday 
-                ? "Código válido para hoy" 
-                : `Código para ${targetDate.toLocaleDateString('es-ES')}`;
+                ? "Code valid for today" 
+                : `Code for ${targetDate.toLocaleDateString('en-US')}`;
         }
         validateCode();
     }
 
-    // Formatea un código insertando espacios entre bloques: 2 bloques de 3 (TOTP) o 4 bloques de 4 (pass)
+    // Formats a code by inserting spaces between blocks: 2 blocks of 3 (TOTP) or 3 blocks of 4 (pass)
     function formatCodeWithSpaces(code, method) {
         if (!code) return '';
         const groupSize = method === 'pass' ? 4 : 3;
@@ -546,7 +546,7 @@
         return code.replace(regex, '$1 ').trim();
     }
 
-    // Copia el código actualmente generado al portapapeles, agrupado según el método activo
+    // Copies the currently generated code to the clipboard, grouped by active method
     async function copyGeneratedCode() {
         const btn = document.getElementById('copyCodeBtn');
         if (!currentGeneratedCode) return;
@@ -557,7 +557,7 @@
         try {
             await navigator.clipboard.writeText(formatted);
         } catch (e) {
-            // Fallback por si la API de clipboard no está disponible
+            // Fallback in case the clipboard API is not available
             const tempInput = document.createElement('textarea');
             tempInput.value = formatted;
             document.body.appendChild(tempInput);
@@ -568,10 +568,10 @@
 
         if (btn) {
             btn.classList.add('copied');
-            btn.title = '¡Copiado!';
+            btn.title = 'Copied!';
             setTimeout(() => {
                 btn.classList.remove('copied');
-                btn.title = 'Copiar código';
+                btn.title = 'Copy code';
             }, 1500);
         }
     }
@@ -593,10 +593,10 @@
 
         if (btn) {
             btn.classList.add('copied');
-            btn.title = '¡Copiado!';
+            btn.title = 'Copied!';
             setTimeout(() => {
                 btn.classList.remove('copied');
-                btn.title = 'Copiar código sin espacios';
+                btn.title = 'Copy code without spaces';
             }, 1500);
         }
     }
@@ -626,15 +626,15 @@
 
         if (matches) {
             resultBox.className = "result-box valid text-center";
-            resultBox.innerHTML = `✓ Código válido para ${targetDate.toLocaleDateString('es-ES')}`;
+            resultBox.innerHTML = `✓ Valid code for ${targetDate.toLocaleDateString('en-US')}`;
         } else {
             resultBox.className = "result-box invalid text-center";
-            resultBox.innerHTML = "✗ Código incorrecto";
+            resultBox.innerHTML = "✗ Incorrect code";
         }
         resultBox.style.display = "block";
     }
 
-    // ==================== PÁGINA 2: AÑO COMPLETO CON DATATABLES ====================
+    // ==================== PAGE 2: FULL YEAR WITH DATATABLES ====================
     let dataTableInstance = null;
 
     async function generateYearCSV() {
@@ -646,18 +646,18 @@
         const tbody = document.getElementById('previewBody');
 
         if (!secret) {
-            status.innerHTML = '<span class="text-danger">Ingresa una clave secreta</span>';
+            status.innerHTML = '<span class="text-danger">Please enter a secret key</span>';
             return;
         }
         if (isNaN(year) || year < 2020 || year > 2100) {
-            status.innerHTML = '<span class="text-danger">Año inválido</span>';
+            status.innerHTML = '<span class="text-danger">Invalid year</span>';
             return;
         }
 
-        status.textContent = 'Generando códigos...';
+        status.textContent = 'Generating codes...';
         tbody.innerHTML = '';
 
-        // Destruir DataTable anterior si existe
+        // Destroy existing DataTable if present
         if (dataTableInstance) {
             dataTableInstance.destroy();
             dataTableInstance = null;
@@ -682,12 +682,12 @@
         preview.style.display = 'block';
 
         const methodLabel = method === 'pass' ? 'Pass' : 'TOTP';
-        document.getElementById('yearCodeHeader').textContent = `Código ${methodLabel}`;
+        document.getElementById('yearCodeHeader').textContent = `${methodLabel} Code`;
 
         // Inicializar DataTables con botones de exportación (CSV, Excel y PDF)
         dataTableInstance = $('#yearTable').DataTable({
             language: {
-                url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+                url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/en-GB.json'
             },
             pageLength: 25,
             order: [[0, 'asc']],
@@ -697,20 +697,20 @@
             buttons: [
                 {
                     extend: 'csvHtml5',
-                    text: '📄 Exportar CSV',
+                    text: '📄 Export CSV',
                     filename: () => `${methodLabel}_${document.getElementById('yearInput').value}`
                 },
                 {
                     extend: 'excelHtml5',
-                    text: '📊 Exportar Excel',
+                    text: '📊 Export Excel',
                     filename: () => `${methodLabel}_${document.getElementById('yearInput').value}`,
-                    title: () => `Códigos ${methodLabel} - Año ${document.getElementById('yearInput').value}`
+                    title: () => `${methodLabel} Codes - Year ${document.getElementById('yearInput').value}`
                 },
                 {
                     extend: 'pdfHtml5',
-                    text: '🧾 Exportar PDF',
+                    text: '🧾 Export PDF',
                     filename: () => `${methodLabel}_${document.getElementById('yearInput').value}`,
-                    title: () => `Códigos ${methodLabel} - Año ${document.getElementById('yearInput').value}`,
+                    title: () => `${methodLabel} Codes - Year ${document.getElementById('yearInput').value}`,
                     orientation: 'portrait',
                     pageSize: 'A4'
                 }
@@ -720,12 +720,12 @@
         status.innerHTML = '';
     }
 
-    // ==================== INICIALIZACIÓN ====================
+    // ==================== INITIALIZATION ====================
     window.addEventListener('DOMContentLoaded', () => {
         const savedSecret = localStorage.getItem('totp_ascii_secret') || "mi-clave-secreta-123";
         const today = new Date().toISOString().split('T')[0];
 
-        // Asegura que la clave actual forme parte del historial mostrado
+        // Ensures the current key is part of the displayed history
         let history = getSecretHistory();
         if (!history.includes(savedSecret)) {
             history.unshift(savedSecret);
@@ -733,7 +733,7 @@
             localStorage.setItem(SECRET_HISTORY_KEY, JSON.stringify(history));
         }
 
-        // Construye las opciones iniciales y activa Select2 en el campo de clave (navbar)
+        // Builds initial options and activates Select2 on the key field (navbar)
         SECRET_SELECT_IDS.forEach(id => {
             const $sel = $('#' + id);
             history.forEach(val => {
@@ -745,7 +745,7 @@
         document.getElementById('dateInput').value = today;
         document.getElementById('yearInput').value = new Date().getFullYear();
 
-        // Restaura el método (TOTP/Pass) elegido la última vez
+        // Restores the last chosen method (TOTP/Pass)
         const savedMethod = localStorage.getItem(METHOD_STORAGE_KEY);
         if (savedMethod === 'totp' || savedMethod === 'pass') {
             document.getElementById('methodSelect').value = savedMethod;
@@ -753,7 +753,7 @@
 
         showPage(1);
 
-        // Evento: clave secreta global (Select2, con historial)
+        // Event: global secret key (Select2, with history)
         $('#secretInput').on('change.appSecret', function () {
             const val = $(this).val() || '';
             localStorage.setItem('totp_ascii_secret', val);
@@ -771,7 +771,7 @@
             }
         }, 1000);
 
-        // Aplica el método (TOTP/Pass) ya cargado en el select y refresca toda la UI
+        // Applies the (TOTP/Pass) method already loaded in the select and refreshes the entire UI
         updateMethodUI();
     });
     </script>

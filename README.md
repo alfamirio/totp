@@ -1,83 +1,83 @@
-# 🔑 Panel TOPT 24 Horas
+# 🔑 24-Hour TOTP Panel
 
-Herramienta web (100% del lado del cliente, sin servidor) que genera y valida códigos de seguridad a partir de una frase secreta. A diferencia de un TOTP estándar (que cambia cada 30 segundos), aquí el código cambia **una vez al día**, lo que lo hace útil para escenarios donde necesitas un código memorable que se mantenga estable durante toda la jornada.
+A fully client-side web tool (no server required) that generates and validates security codes from a secret passphrase. Unlike standard TOTP (which changes every 30 seconds), codes here change **once a day**, making them useful when you need a memorable code that stays stable throughout the entire day.
 
-## Características
+## Features
 
-- **Dos modos de código**:
-  - **TOTP**: código numérico de 6 dígitos, mostrado en 2 bloques de 3.
-  - **Pass**: contraseña alfanumérica de 12 caracteres (mayúsculas, minúsculas y dígitos), mostrada en 3 bloques de 4.
-- **Generador diario**: crea el código correspondiente a la fecha seleccionada.
-- **Validador**: verifica si un código introducido corresponde a la clave y fecha indicadas.
-- **Dos botones de copia**:
-  - 🟠 Copia el código **con espacios** entre bloques (más legible).
-  - 🟣 Copia el código **sin espacios** (listo para pegar directamente).
-- **Historial de claves**: guarda hasta 5 claves secretas usadas recientemente, accesibles desde un desplegable con búsqueda (Select2).
-- **Exportación anual**: genera una tabla con todos los códigos del año seleccionado, con vista previa paginada, búsqueda y exportación a **CSV**, **Excel** y **PDF**.
-- Funciona completamente en el navegador: no se envía ninguna clave a un servidor externo.
+- **Two code modes**:
+  - **TOTP**: 6-digit numeric code, displayed in 2 blocks of 3.
+  - **Pass**: 12-character alphanumeric password (uppercase, lowercase and digits), displayed in 3 blocks of 4.
+- **Daily generator**: produces the code for any selected date.
+- **Validator**: checks whether an entered code matches the current key and date.
+- **Two copy buttons**:
+  - 🟠 Copies the code **with spaces** between blocks (more readable).
+  - 🟣 Copies the code **without spaces** (ready to paste directly).
+- **Key history**: stores up to 5 recently used secret keys, accessible from a searchable dropdown (Select2).
+- **Annual export**: generates a full table of codes for any selected year, with paginated preview, search, and export to **CSV**, **Excel**, and **PDF**.
+- Runs entirely in the browser — no secret key is ever sent to an external server.
 
-## Cómo funciona
+## How it works
 
-1. La **clave secreta** que escribes (cualquier palabra o frase en ASCII) se procesa con SHA-256 para obtener un valor de longitud fija.
-2. **Modo TOTP**: el valor se codifica en Base32 y se genera un código de 6 dígitos usando el número de día como contador (variante HOTP con contador diario).
-3. **Modo Pass**: el valor hash se combina con el número de día para derivar de forma determinista una contraseña alfanumérica de 12 caracteres. La misma clave y fecha siempre producen el mismo resultado.
+1. The **secret key** you enter (any ASCII word or phrase) is processed with SHA-256 to produce a fixed-length value.
+2. **TOTP mode**: the hash is Base32-encoded and a 6-digit code is generated using the day number as a counter (a daily-counter HOTP variant).
+3. **Pass mode**: the hash is combined with the day number to deterministically derive a 12-character alphanumeric password. The same key and date always produce the same result.
 
-> **Nota técnica:** el modo TOTP no es un TOTP estándar (RFC 6238), sino una variante de HOTP con contador diario. No es compatible con apps de autenticación como Google Authenticator.
+> **Technical note:** TOTP mode is not standard TOTP (RFC 6238) — it is an HOTP variant with a daily counter. It is not compatible with authenticator apps such as Google Authenticator.
 
-## ⚠️ Aviso de seguridad y responsabilidad
+## ⚠️ Security disclaimer
 
-**Este proyecto es una herramienta experimental/educativa y NO debe usarse para proteger nada serio o sensible** (cuentas, sistemas de producción, datos personales, acceso financiero, infraestructura crítica, etc.). No está diseñado ni auditado como un mecanismo de autenticación de nivel productivo.
+**This project is an experimental/educational tool and should NOT be used to protect anything sensitive** (accounts, production systems, personal data, financial access, critical infrastructure, etc.). It has not been designed or audited as a production-grade authentication mechanism.
 
-El código se proporciona **"tal cual" (as-is), sin garantía de ningún tipo**, explícita o implícita. El autor no se hace responsable de pérdidas de acceso, brechas de seguridad, filtraciones de datos, daños directos o indirectos, ni de ninguna otra consecuencia derivada del uso, mal uso o fallo de este código. Su uso es bajo el propio riesgo y responsabilidad de quien lo implemente.
+The code is provided **"as-is", without warranty of any kind**, express or implied. The author is not responsible for loss of access, security breaches, data leaks, direct or indirect damages, or any other consequence arising from the use, misuse, or failure of this code. Use it at your own risk.
 
-## Requisitos
+## Requirements
 
-- Un navegador web moderno con conexión a internet (el panel carga Bootstrap, DataTables, Select2 y otplib desde un CDN).
-- No requiere instalación, backend ni dependencias adicionales.
+- A modern web browser with an internet connection (the panel loads Bootstrap, DataTables, Select2, and otplib from a CDN).
+- No installation, backend, or additional dependencies required.
 
-## Cómo usar
+## How to use
 
-### Barra de navegación
+### Navigation bar
 
-Todos los controles globales están en la barra superior:
+All global controls are in the top bar:
 
-- **Clave Secreta**: desplegable con historial de hasta 5 claves. Puedes escribir una nueva directamente para crearla.
-- **Fecha**: selector de fecha usado por el generador y el validador.
-- **Método**: elige entre `TOTP (6 dígitos)` y `Pass (12 alfanuméricos)`.
-- **Hoy / Fecha** y **Año Completo**: navegación entre las dos páginas. El logo 🔑 también navega a la página principal.
+- **Secret Key**: dropdown with a history of up to 5 keys. Type a new one directly to create it.
+- **Date**: date picker used by both the generator and the validator.
+- **Method**: choose between `TOTP (6 digits)` and `Pass (12 alphanumeric)`.
+- **Today / Date** and **Full Year**: navigation between the two pages. The 🔑 logo also navigates back to the main page.
 
-### 1. Generar un código
+### 1. Generate a code
 
-1. Abre `index.html` en tu navegador.
-2. En la barra superior, introduce tu **Clave Secreta**, selecciona la **Fecha** y el **Método**.
-3. El código aparecerá automáticamente en el panel **Generador**.
-4. Usa el botón 🟠 para copiar el código con espacios, o el botón 🟣 para copiarlo sin espacios.
+1. Open `index.html` in your browser.
+2. In the top bar, enter your **Secret Key**, select the **Date** and **Method**.
+3. The code will appear automatically in the **Generator** panel.
+4. Use the 🟠 button to copy the code with spaces, or the 🟣 button to copy it without spaces.
 
-### 2. Validar un código
+### 2. Validate a code
 
-1. En el panel **Validador**, asegúrate de tener la misma clave y fecha configuradas en la barra superior.
-2. Escribe el código a verificar en el campo de entrada.
-3. El sistema indicará en tiempo real si el código es **válido** o **incorrecto**.
+1. In the **Validator** panel, make sure the same key and date are set in the top bar.
+2. Type the code to verify in the input field.
+3. The system will indicate in real time whether the code is **valid** or **incorrect**.
 
-> La clave secreta y la fecha se sincronizan automáticamente entre el generador y el validador.
+> The secret key and date are automatically synced between the generator and the validator.
 
-### 3. Generar códigos para todo un año
+### 3. Generate codes for a full year
 
-1. Ve a la pestaña **Año Completo**.
-2. Selecciona el año deseado (2020–2100).
-3. Haz clic en **Generar CSV** para ver la tabla con todos los códigos del año.
-4. Exporta el resultado usando los botones **CSV**, **Excel** o **PDF**.
+1. Go to the **Full Year** tab.
+2. Select the desired year (2020–2100).
+3. Click **Generate CSV** to see the table with all codes for that year.
+4. Export the result using the **CSV**, **Excel**, or **PDF** buttons.
 
-## Consideraciones de seguridad
+## Security considerations
 
-- La clave secreta se guarda en el `localStorage` del navegador **en texto plano**. No la uses en equipos compartidos o públicos.
-- La derivación de clave usa un único SHA-256 (sin factor de costo como PBKDF2 o Argon2), por lo que frases cortas o comunes pueden ser vulnerables a ataques de fuerza bruta o diccionario.
-- Esta herramienta está pensada **únicamente** para usos personales, lúdicos o de muy baja sensibilidad. **Nunca** como sustituto de un sistema de autenticación de dos factores real ni para proteger nada que importe de verdad.
+- The secret key is stored in the browser's `localStorage` **in plain text**. Do not use it on shared or public devices.
+- Key derivation uses a single SHA-256 (no cost factor such as PBKDF2 or Argon2), so short or common passphrases may be vulnerable to brute-force or dictionary attacks.
+- This tool is intended **only** for personal, recreational, or very low-sensitivity use. **Never** as a replacement for a real two-factor authentication system or to protect anything that truly matters.
 
-## Estructura del proyecto
+## Project structure
 
 ```
 .
-├── index.html   # Aplicación completa (HTML + CSS + JS)
-└── README.md    # Este archivo
+├── index.html   # Complete application (HTML + CSS + JS)
+└── README.md    # This file
 ```
