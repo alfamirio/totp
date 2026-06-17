@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel TOPT de 24 Horas</title>
+    <title>Panel TOPT 24 Horas</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+
+    <script src="https://unpkg.com/@otplib/preset-browser@12.0.1/buffer.js"></script>
+    <script src="https://unpkg.com/@otplib/preset-browser@12.0.1/index.js"></script>
 
     <style>
         :root {
@@ -21,18 +26,12 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
         }
         .main-card {
             background: var(--card-bg);
             border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
-            border: none;
         }
-        h1 { font-size: 24px; margin-bottom: 8px; }
-        .subtitle { font-size: 14px; color: #7f8c8d; margin-bottom: 24px; }
-        
         .token-display {
             background: #f8f9fa;
             border: 1px dashed var(--border);
@@ -40,111 +39,171 @@
             padding: 24px;
         }
         .token-blocks {
-            display: inline-block;
             font-size: 48px;
             font-weight: bold;
             color: var(--accent);
             letter-spacing: 4px;
         }
-        .token-separator {
-            margin: 0 10px;
-            color: #bdc3c7;
-            font-size: 42px;
-            user-select: none;
-        }
-        .time-left { font-size: 13px; color: #7f8c8d; margin-top: 14px; }
+        .token-separator { margin: 0 12px; color: #bdc3c7; font-size: 42px; }
+        .time-left { font-size: 14px; color: #7f8c8d; margin-top: 12px; }
 
         .result-box {
             padding: 15px;
             border-radius: 6px;
             font-weight: bold;
-            display: none;
             margin-top: 20px;
         }
-        .result-box.valid { display: block; background-color: #e8f8f0; color: var(--success); border: 1px solid var(--success); }
-        .result-box.invalid { display: block; background-color: #fdedec; color: var(--error); border: 1px solid var(--error); }
-    </style>
+        .result-box.valid { background-color: #e8f8f0; color: var(--success); border: 1px solid var(--success); }
+        .result-box.invalid { background-color: #fdedec; color: var(--error); border: 1px solid var(--error); }
 
-    <script src="https://unpkg.com/@otplib/preset-browser@12.0.1/buffer.js"></script>
-    <script src="https://unpkg.com/@otplib/preset-browser@12.0.1/index.js"></script>
+        .nav-link.active {
+            background-color: var(--accent);
+            color: white !important;
+            border-radius: 6px;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.3rem 0.7rem !important;
+        }
+    </style>
 </head>
 <body>
 
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">🔑 TOPT 24h</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link active" href="#" onclick="showPage(1)">Hoy / Fecha</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showPage(2)">Año Completo</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
     <div class="container my-5">
-        <div class="card main-card p-4 p-md-5">
+
+        <!-- PÁGINA 1: Hoy / Fecha -->
+        <div id="page1" class="page">
             <div class="row g-5">
-                
-                <div class="col-12 col-md-6 col-divider">
-                    <h1 class="text-center text-md-start">Generador TOPT (24h)</h1>
-                    <p class="subtitle text-center text-md-start">Clave secreta en texto plano (ASCII)</p>
+                <div class="col-12 col-md-6">
+                    <div class="card main-card p-4 p-md-5">
+                        <h2 class="text-center mb-4">Generador TOPT</h2>
+                        <p class="text-muted text-center mb-4">Selecciona la fecha</p>
 
-                    <div class="mb-4">
-                        <label for="secretInput" class="form-label fw-semibold">Clave Secreta</label>
-                        <input type="text" id="secretInput" class="form-control" placeholder="Ej: mi-clave-secreta-123">
-                    </div>
-
-                    <div class="token-display text-center">
-                        <div class="token-label">CÓDIGO DEL DÍA</div>
-                        <div class="d-flex justify-content-center align-items-center">
-                            <span id="block1" class="token-blocks">---</span>
-                            <span id="separator" class="token-separator">-</span>
-                            <span id="block2" class="token-blocks">---</span>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Clave Secreta (ASCII)</label>
+                            <input type="text" id="secretInput" class="form-control" placeholder="Ej: mi-clave-secreta-123">
                         </div>
-                        <div id="timeLeft" class="time-left">Calculando...</div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Fecha</label>
+                            <input type="date" id="dateInput" class="form-control">
+                        </div>
+
+                        <div class="token-display text-center">
+                            <div class="token-label mb-3">CÓDIGO TOPT</div>
+                            <div class="d-flex justify-content-center align-items-center">
+                                <span id="block1" class="token-blocks">---</span>
+                                <span id="separator" class="token-separator">-</span>
+                                <span id="block2" class="token-blocks">---</span>
+                            </div>
+                            <div id="timeLeft" class="time-left">Selecciona fecha y clave</div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="col-12 col-md-6">
-                    <h1 class="text-center text-md-start">Validador TOPT (24h)</h1>
-                    <p class="subtitle text-center text-md-start">Comprueba si un código es correcto hoy</p>
+                    <div class="card main-card p-4 p-md-5">
+                        <h2 class="text-center mb-4">Validador TOPT</h2>
+                        <p class="text-muted text-center mb-4">Verifica un código</p>
 
-                    <div class="mb-3">
-                        <label for="valSecretInput" class="form-label fw-semibold">Clave Secreta</label>
-                        <input type="text" id="valSecretInput" class="form-control" placeholder="Ej: mi-clave-secreta-123">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Clave Secreta</label>
+                            <input type="text" id="valSecretInput" class="form-control">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Fecha</label>
+                            <input type="date" id="valDateInput" class="form-control">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Código de 6 dígitos</label>
+                            <input type="text" id="valCodeInput" class="form-control text-center fs-4 fw-bold" placeholder="000000" maxlength="6">
+                        </div>
+
+                        <div id="resultBox" class="result-box text-center"></div>
                     </div>
-
-                    <div class="mb-4">
-                        <label for="valCodeInput" class="form-label fw-semibold">Código de 6 dígitos</label>
-                        <input type="text" id="valCodeInput" class="form-control text-center fs-4 fw-bold text-secondary" placeholder="000000" maxlength="6">
-                    </div>
-
-                    <div id="resultBox" class="result-box text-center"></div>
                 </div>
+            </div>
+        </div>
+
+        <!-- PÁGINA 2: Año Completo con DataTables -->
+        <div id="page2" class="page" style="display: none;">
+            <div class="card main-card p-4 p-md-5">
+                <h2 class="text-center mb-4">Generador CSV - Todo el Año</h2>
+                <p class="text-muted text-center mb-4">Desde el 1 de enero hasta el 31 de diciembre</p>
+
+                <div class="row mb-4 g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Clave Secreta (ASCII)</label>
+                        <input type="text" id="secretInput3" class="form-control" placeholder="Ej: mi-clave-secreta-123">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Año</label>
+                        <input type="number" id="yearInput" class="form-control" min="2020" max="2100" value="2026">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button onclick="generateYearCSV()" class="btn btn-primary w-100">Generar CSV</button>
+                    </div>
+                </div>
+
+                <div id="yearPreview" style="display: none;">
+                    <table id="yearTable" class="table table-striped table-hover" style="width:100%">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Código TOPT</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button id="downloadBtn" onclick="downloadCSV()" class="btn btn-success btn-lg" style="display: none;">
+                        📥 Descargar CSV Completo
+                    </button>
+                </div>
+
+                <div id="status3" class="text-center mt-3"></div>
             </div>
         </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
     <script>
-    // Esperar a que otplib esté disponible
-    function waitForOtplib() {
+    // ==================== UTILIDADES ====================
+    async function waitForOtplib() {
+        if (window.otplib) return;
         return new Promise(resolve => {
-            if (window.otplib) return resolve();
             const check = setInterval(() => {
-                if (window.otplib) {
-                    clearInterval(check);
-                    resolve();
-                }
+                if (window.otplib) { clearInterval(check); resolve(); }
             }, 50);
         });
     }
-
-    const secretInput = document.getElementById('secretInput');
-    const block1 = document.getElementById('block1');
-    const block2 = document.getElementById('block2');
-    const separator = document.getElementById('separator');
-    const timeLeftDisplay = document.getElementById('timeLeft');
-
-    const valSecretInput = document.getElementById('valSecretInput');
-    const valCodeInput = document.getElementById('valCodeInput');
-    const resultBox = document.getElementById('resultBox');
-
-    let lastDayCounter = null;
 
     function bufferToBase32(buffer) {
         const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
         const bytes = new Uint8Array(buffer);
         let bits = 0, value = 0, output = "";
-
         for (let i = 0; i < bytes.length; i++) {
             value = (value << 8) | bytes[i];
             bits += 8;
@@ -157,116 +216,209 @@
         return output;
     }
 
-    async function getDayContext(secretText) {
+    async function generateTOTP(secretText, targetDate) {
+        if (!secretText?.trim()) return null;
         const encoder = new TextEncoder();
-        const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(secretText));
+        const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(secretText.trim()));
         const secretBase32 = bufferToBase32(hashBuffer);
 
-        // Usamos UTC para consistencia global
-        const now = new Date();
-        const utcDay = Math.floor(now.getTime() / 86400000);
-
-        return { secretBase32, dayCounter: utcDay, now };
+        await waitForOtplib();
+        otplib.hotp.options = { digits: 6 };
+        const dayCounter = Math.floor(targetDate.getTime() / 86400000);
+        return otplib.hotp.generate(secretBase32, dayCounter);
     }
 
-    async function updateTOTP() {
-        const secret = secretInput.value.trim();
+    // ==================== NAVEGACIÓN ====================
+    function showPage(page) {
+        document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+        document.getElementById(`page${page}`).style.display = 'block';
+
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.toggle('active', 
+                (page === 1 && link.textContent.includes('Hoy')) || 
+                (page === 2 && link.textContent === 'Año Completo')
+            );
+        });
+    }
+
+    // ==================== PÁGINA 1 ====================
+    async function updateGenerator() {
+        const secret = document.getElementById('secretInput').value.trim();
+        const dateStr = document.getElementById('dateInput').value;
         localStorage.setItem('totp_ascii_secret', secret);
 
-        if (!secret) {
-            block1.textContent = "---";
-            block2.textContent = "---";
-            timeLeftDisplay.textContent = "Introduce una clave secreta";
-            resultBox.style.display = "none";
+        if (!secret || !dateStr) {
+            document.getElementById('block1').textContent = "---";
+            document.getElementById('block2').textContent = "---";
+            document.getElementById('timeLeft').textContent = "Completa clave y fecha";
             return;
         }
 
-        try {
-            const { secretBase32, dayCounter, now } = await getDayContext(secret);
+        const targetDate = new Date(dateStr + "T12:00:00");
+        const token = await generateTOTP(secret, targetDate);
 
-            await waitForOtplib();
-            otplib.hotp.options = { digits: 6 };
-            const token = otplib.hotp.generate(secretBase32, dayCounter);
-
-            block1.textContent = token.substring(0, 3);
-            block2.textContent = token.substring(3, 6);
-            separator.style.display = "inline";
-
-            // Tiempo restante hasta próximo día (UTC)
-            const nextDay = (Math.floor(now.getTime() / 86400000) + 1) * 86400000;
-            const diffMs = nextDay - now.getTime();
-
-            const hours = Math.floor(diffMs / 3600000);
-            const minutes = Math.floor((diffMs % 3600000) / 60000);
-            const seconds = Math.floor((diffMs % 60000) / 1000);
-
-            timeLeftDisplay.textContent = `Próximo código en: ${hours}h ${minutes}m ${seconds}s`;
-
-            lastDayCounter = dayCounter;
-            validateOTP(); // Actualizar validador
-
-        } catch (e) {
-            console.error(e);
-            block1.textContent = "ERR";
-            block2.textContent = "OR";
-            timeLeftDisplay.textContent = "Error al generar código";
+        if (token) {
+            document.getElementById('block1').textContent = token.substring(0, 3);
+            document.getElementById('block2').textContent = token.substring(3, 6);
+            const isToday = dateStr === new Date().toISOString().split('T')[0];
+            document.getElementById('timeLeft').textContent = isToday 
+                ? "Código válido para hoy" 
+                : `Código para ${targetDate.toLocaleDateString('es-ES')}`;
         }
+        validateCode();
     }
 
-    async function validateOTP() {
-        const secret = valSecretInput.value.trim();
-        const inputCode = valCodeInput.value.trim().replace(/[^0-9]/g, '');
+    async function validateCode() {
+        const secret = document.getElementById('valSecretInput').value.trim();
+        const dateStr = document.getElementById('valDateInput').value;
+        const code = document.getElementById('valCodeInput').value.trim().replace(/[^0-9]/g, '');
+        const resultBox = document.getElementById('resultBox');
 
-        if (!secret || inputCode.length !== 6) {
+        if (!secret || !dateStr || code.length !== 6) {
             resultBox.style.display = "none";
             return;
         }
 
-        try {
-            const { secretBase32, dayCounter } = await getDayContext(secret);
-            await waitForOtplib();
-            
-            otplib.hotp.options = { digits: 6 };
-            const validToken = otplib.hotp.generate(secretBase32, dayCounter);
+        const targetDate = new Date(dateStr + "T12:00:00");
+        const token = await generateTOTP(secret, targetDate);
 
-            if (inputCode === validToken) {
-                resultBox.className = "result-box valid text-center";
-                resultBox.innerHTML = "✓ Código <strong>VÁLIDO</strong> para hoy";
-            } else {
-                resultBox.className = "result-box invalid text-center";
-                resultBox.innerHTML = "✗ Código incorrecto o caducado";
-            }
-            resultBox.style.display = "block";
-        } catch (e) {
-            console.error(e);
+        if (token && token === code) {
+            resultBox.className = "result-box valid text-center";
+            resultBox.innerHTML = `✓ Código válido para ${targetDate.toLocaleDateString('es-ES')}`;
+        } else {
             resultBox.className = "result-box invalid text-center";
-            resultBox.textContent = "Error al validar";
-            resultBox.style.display = "block";
+            resultBox.innerHTML = "✗ Código incorrecto";
         }
+        resultBox.style.display = "block";
     }
 
-    // Eventos
+    // ==================== PÁGINA 2: AÑO COMPLETO CON DATATABLES ====================
+    let currentYearData = [];
+    let dataTableInstance = null;
+
+    async function generateYearCSV() {
+        const secret = document.getElementById('secretInput3').value.trim();
+        const year = parseInt(document.getElementById('yearInput').value);
+        const status = document.getElementById('status3');
+        const preview = document.getElementById('yearPreview');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const tbody = document.getElementById('previewBody');
+
+        if (!secret) {
+            status.innerHTML = '<span class="text-danger">Ingresa una clave secreta</span>';
+            return;
+        }
+        if (isNaN(year) || year < 2020 || year > 2100) {
+            status.innerHTML = '<span class="text-danger">Año inválido</span>';
+            return;
+        }
+
+        status.textContent = 'Generando códigos...';
+        currentYearData = [];
+        tbody.innerHTML = '';
+
+        // Destruir DataTable anterior si existe
+        if (dataTableInstance) {
+            dataTableInstance.destroy();
+            dataTableInstance = null;
+        }
+
+        const startDate = new Date(Date.UTC(year, 0, 1));
+        const isLeap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
+        const daysInYear = isLeap ? 366 : 365;
+
+        for (let i = 0; i < daysInYear; i++) {
+            const date = new Date(startDate);
+            date.setUTCDate(startDate.getUTCDate() + i);
+
+            const code = await generateTOTP(secret, date);
+            const dateStr = date.toISOString().split('T')[0];
+
+            currentYearData.push({ fecha: dateStr, codigo: code });
+
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${dateStr}</td><td><strong>${code}</strong></td>`;
+            tbody.appendChild(row);
+        }
+
+        preview.style.display = 'block';
+        downloadBtn.style.display = 'inline-block';
+
+        // Inicializar DataTables
+        dataTableInstance = $('#yearTable').DataTable({
+            language: {
+                url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+            },
+            pageLength: 25,
+            order: [[0, 'asc']],
+            searching: true,
+            responsive: true
+        });
+
+        status.innerHTML = `<span class="text-success">✅ ${daysInYear} códigos generados para ${year}</span>`;
+    }
+
+    function downloadCSV() {
+        if (currentYearData.length === 0) return;
+        let csv = "Fecha,Codigo_TOPT\n";
+        currentYearData.forEach(r => csv += `${r.fecha},${r.codigo}\n`);
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `TOPT_${document.getElementById('yearInput').value}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // ==================== INICIALIZACIÓN ====================
     window.addEventListener('DOMContentLoaded', () => {
-        const saved = localStorage.getItem('totp_ascii_secret') || "mi-clave-secreta-123";
-        secretInput.value = saved;
-        valSecretInput.value = saved;
-        updateTOTP();
+        const savedSecret = localStorage.getItem('totp_ascii_secret') || "mi-clave-secreta-123";
+        const today = new Date().toISOString().split('T')[0];
+
+        document.getElementById('secretInput').value = savedSecret;
+        document.getElementById('valSecretInput').value = savedSecret;
+        document.getElementById('secretInput3').value = savedSecret;
+
+        document.getElementById('dateInput').value = today;
+        document.getElementById('valDateInput').value = today;
+        document.getElementById('yearInput').value = new Date().getFullYear();
+
+        showPage(1);
+
+        // Eventos Página 1
+        const syncSecret = () => {
+            const val = document.getElementById('secretInput').value;
+            document.getElementById('valSecretInput').value = val;
+            localStorage.setItem('totp_ascii_secret', val);
+            updateGenerator();
+        };
+
+        document.getElementById('secretInput').addEventListener('input', syncSecret);
+        document.getElementById('valSecretInput').addEventListener('input', () => {
+            const val = document.getElementById('valSecretInput').value;
+            document.getElementById('secretInput').value = val;
+            localStorage.setItem('totp_ascii_secret', val);
+            updateGenerator();
+        });
+
+        document.getElementById('dateInput').addEventListener('change', updateGenerator);
+        document.getElementById('valDateInput').addEventListener('change', validateCode);
+        document.getElementById('valCodeInput').addEventListener('input', validateCode);
+
+        setInterval(() => {
+            if (document.getElementById('dateInput').value === new Date().toISOString().split('T')[0]) {
+                updateGenerator();
+            }
+        }, 1000);
+
+        document.getElementById('secretInput3').addEventListener('input', () => {
+            localStorage.setItem('totp_ascii_secret', document.getElementById('secretInput3').value);
+        });
     });
-
-    secretInput.addEventListener('input', () => {
-        valSecretInput.value = secretInput.value;
-        updateTOTP();
-    });
-
-    valSecretInput.addEventListener('input', () => {
-        secretInput.value = valSecretInput.value;
-        updateTOTP();
-    });
-
-    valCodeInput.addEventListener('input', validateOTP);
-
-    // Actualización cada segundo
-    setInterval(updateTOTP, 1000);
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
