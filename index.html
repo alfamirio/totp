@@ -186,7 +186,7 @@
                         <label for="methodSelect" class="navbar-field-label mb-0">Método</label>
                         <select id="methodSelect" class="form-select form-select-sm" style="width: auto;">
                             <option value="totp" selected>TOTP (6 dígitos)</option>
-                            <option value="pass">Pass (16 alfanuméricos)</option>
+                            <option value="pass">Pass (12 alfanuméricos)</option>
                         </select>
                     </div>
                     <ul class="navbar-nav">
@@ -340,7 +340,7 @@
         return otplib.hotp.generate(secretBase32, dayCounter);
     }
 
-    // Genera una clave alfanumérica diaria de 16 caracteres (mayúsculas, minúsculas y dígitos),
+    // Genera una clave alfanumérica diaria de 12 caracteres (mayúsculas, minúsculas y dígitos),
     // derivada de forma determinista de la clave secreta + el día (igual principio que TOTP).
     async function generatePass(secretText, targetDate) {
         if (!secretText?.trim()) return null;
@@ -354,7 +354,7 @@
 
         const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         let result = "";
-        for (let i = 0; i < 16; i++) {
+        for (let i = 0; i < 12; i++) {
             result += alphabet[hashBytes[i] % alphabet.length];
         }
         return result;
@@ -440,9 +440,9 @@
         const codeLabel = document.getElementById('valCodeLabel');
 
         if (method === 'pass') {
-            codeLabel.textContent = 'Código de 16 alfanuméricos';
-            codeInput.setAttribute('maxlength', '20');
-            codeInput.setAttribute('placeholder', 'AbCd 1234 EfGh 5678');
+            codeLabel.textContent = 'Código de 12 alfanuméricos';
+            codeInput.setAttribute('maxlength', '14');
+            codeInput.setAttribute('placeholder', 'AbCd 1234 EfGh');
         } else {
             codeLabel.textContent = 'Código de 6 dígitos';
             codeInput.setAttribute('maxlength', '8');
@@ -493,15 +493,14 @@
         const s3 = document.getElementById('separator3');
 
         if (method === 'pass') {
-            // 4 bloques de 4 caracteres
+            // 3 bloques de 4 caracteres
             b1.textContent = token ? token.substring(0, 4) : "----";
             b2.textContent = token ? token.substring(4, 8) : "----";
             b3.textContent = token ? token.substring(8, 12) : "----";
-            b4.textContent = token ? token.substring(12, 16) : "----";
             b3.style.display = "inline";
-            b4.style.display = "inline";
+            b4.style.display = "none";
             s2.style.display = "inline";
-            s3.style.display = "inline";
+            s3.style.display = "none";
         } else {
             // 2 bloques de 3 dígitos (comportamiento original TOTP)
             b1.textContent = token ? token.substring(0, 3) : "---";
@@ -610,7 +609,7 @@
         const code = method === 'pass'
             ? rawCode.replace(/[^a-zA-Z0-9]/g, '')
             : rawCode.replace(/[^0-9]/g, '');
-        const expectedLength = method === 'pass' ? 16 : 6;
+        const expectedLength = method === 'pass' ? 12 : 6;
         const resultBox = document.getElementById('resultBox');
 
         if (!secret || !dateStr || code.length !== expectedLength) {
