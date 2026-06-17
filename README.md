@@ -2,6 +2,14 @@
 
 A fully client-side web tool (no server required) that generates and validates security codes from a secret passphrase. Unlike standard TOTP (which changes every 30 seconds), codes here change **once a day**, making them useful when you need a memorable code that stays stable throughout the entire day.
 
+## Utility
+### Access control / timed delivery
+- Unlock a compressed file with materials at the exact start of a exam, class or webinar
+- Time-gate a contest or puzzle — participants get the archive in advance, the key drops at start time
+
+### Education & demos
+- Teaching cryptography concepts — shows HMAC, counters, and deterministic key derivation in a tangible, interactive way
+
 ## Features
 
 - **Two code modes**:
