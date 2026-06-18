@@ -95,6 +95,25 @@
         .copy-raw-btn.copied { background-color: var(--success); }
         .copy-raw-btn svg { width: 16px; height: 16px; }
 
+        .reset-config-btn {
+            background-color: var(--error);
+            border: none;
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: 10px;
+            vertical-align: middle;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+        }
+        .reset-config-btn:hover { background-color: #c0392b; }
+        .reset-config-btn:active { transform: scale(0.92); }
+        .reset-config-btn svg { width: 15px; height: 15px; }
+
         .result-box {
             padding: 22px;
             border-radius: 8px;
@@ -170,6 +189,15 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-xl">
             <a class="navbar-brand fw-bold" href="#" onclick="showPage(1)">🔑 TOPT 24h</a>
+            <button id="resetConfigBtn" class="reset-config-btn" type="button" title="Delete all saved config (secret, history, method)" onclick="resetAppConfig()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                    <path d="M10 11v6"></path>
+                    <path d="M14 11v6"></path>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                </svg>
+            </button>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -270,7 +298,7 @@
                         <input type="number" id="yearInput" class="form-control" min="2020" max="2100" value="2026">
                     </div>
                     <div class="col-md-5 d-flex align-items-end">
-                        <button onclick="generateYearCSV()" class="btn btn-primary w-100">Generate CSV</button>
+                        <button onclick="generateYearTable()" class="btn btn-primary w-100">Generate Full Year</button>
                     </div>
                 </div>
 
@@ -365,18 +393,57 @@
         return result;
     }
 
-    // Returns the currently selected method: 'totp', 'pass8' or 'pass12'
+    // ==================== METHOD REGISTRY ====================
+    // Single source of truth for everything that varies by method (totp/pass8/pass12).
+    // Every other function (UI labels, validation, block rendering, code generation,
+    // CSV export...) reads from here instead of branching on the method name.
+    const METHODS = {
+        totp: {
+            label: 'TOTP',
+            codeLength: 6,
+            groupSize: 3,
+            isAlphanumeric: false,
+            inputLabel: '6-digit code',
+            placeholder: '000 000',
+            maxLength: 8,
+            generate: (secret, date) => generateTOTP(secret, date)
+        },
+        pass8: {
+            label: 'Pass8',
+            codeLength: 8,
+            groupSize: 4,
+            isAlphanumeric: true,
+            inputLabel: '8-character alphanumeric code',
+            placeholder: 'AbCd 1234',
+            maxLength: 9,
+            generate: (secret, date) => generatePass(secret, date, 8)
+        },
+        pass12: {
+            label: 'Pass12',
+            codeLength: 12,
+            groupSize: 4,
+            isAlphanumeric: true,
+            inputLabel: '12-character alphanumeric code',
+            placeholder: 'AbCd 1234 EfGh',
+            maxLength: 14,
+            generate: (secret, date) => generatePass(secret, date, 12)
+        }
+    };
+
+    // Returns the currently selected method key: 'totp', 'pass8' or 'pass12'
     function getCurrentMethod() {
         const el = document.getElementById('methodSelect');
         return el ? el.value : 'totp';
     }
 
+    // Looks up the config for a method, falling back to TOTP for unknown values
+    function getMethodConfig(method) {
+        return METHODS[method] || METHODS.totp;
+    }
+
     // Generates the code based on the active method
     async function generateCode(secretText, targetDate, method) {
-        const m = method || getCurrentMethod();
-        if (m === 'pass8') return generatePass(secretText, targetDate, 8);
-        if (m === 'pass12') return generatePass(secretText, targetDate, 12);
-        return generateTOTP(secretText, targetDate);
+        return getMethodConfig(method || getCurrentMethod()).generate(secretText, targetDate);
     }
 
     // ==================== SECRET KEY HISTORY (Select2) ====================
@@ -446,19 +513,10 @@
         const codeInput = document.getElementById('valCodeInput');
         const codeLabel = document.getElementById('valCodeLabel');
 
-        if (method === 'pass12') {
-            codeLabel.textContent = '12-character alphanumeric code';
-            codeInput.setAttribute('maxlength', '14');
-            codeInput.setAttribute('placeholder', 'AbCd 1234 EfGh');
-        } else if (method === 'pass8') {
-            codeLabel.textContent = '8-character alphanumeric code';
-            codeInput.setAttribute('maxlength', '9');
-            codeInput.setAttribute('placeholder', 'AbCd 1234');
-        } else {
-            codeLabel.textContent = '6-digit code';
-            codeInput.setAttribute('maxlength', '8');
-            codeInput.setAttribute('placeholder', '000 000');
-        }
+        const config = getMethodConfig(method);
+        codeLabel.textContent = config.inputLabel;
+        codeInput.setAttribute('maxlength', config.maxLength);
+        codeInput.setAttribute('placeholder', config.placeholder);
         codeInput.value = '';
 
         renderTokenBlocks(null, method);
@@ -474,6 +532,21 @@
 
         updateGenerator();
         validateCode();
+    }
+
+    // ==================== RESET / DELETE ALL CONFIG ====================
+    // All localStorage keys this app writes to, so "delete config" stays correct
+    // if more settings are added later.
+    const CONFIG_STORAGE_KEYS = ['totp_ascii_secret', SECRET_HISTORY_KEY, METHOD_STORAGE_KEY];
+
+    function resetAppConfig() {
+        const confirmed = window.confirm(
+            'Delete all saved config?\n\nThis removes the saved secret key, its history, and the selected method. This cannot be undone.'
+        );
+        if (!confirmed) return;
+
+        CONFIG_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+        location.reload();
     }
 
     // ==================== NAVIGATION ====================
@@ -495,39 +568,21 @@
 
     function renderTokenBlocks(token, method) {
         currentGeneratedCode = token || null;
-        const b1 = document.getElementById('block1');
-        const b2 = document.getElementById('block2');
-        const b3 = document.getElementById('block3');
-        const b4 = document.getElementById('block4');
-        const s1 = document.getElementById('separator1');
-        const s2 = document.getElementById('separator2');
-        const s3 = document.getElementById('separator3');
+        const { codeLength, groupSize } = getMethodConfig(method);
+        const numGroups = codeLength / groupSize;
 
-        if (method === 'pass12') {
-            // 3 blocks of 4 characters
-            b1.textContent = token ? token.substring(0, 4) : "----";
-            b2.textContent = token ? token.substring(4, 8) : "----";
-            b3.textContent = token ? token.substring(8, 12) : "----";
-            b3.style.display = "inline";
-            b4.style.display = "none";
-            s2.style.display = "inline";
-            s3.style.display = "none";
-        } else if (method === 'pass8') {
-            // 2 blocks of 4 characters
-            b1.textContent = token ? token.substring(0, 4) : "----";
-            b2.textContent = token ? token.substring(4, 8) : "----";
-            b3.style.display = "none";
-            b4.style.display = "none";
-            s2.style.display = "none";
-            s3.style.display = "none";
-        } else {
-            // 2 blocks of 3 digits (original TOTP behavior)
-            b1.textContent = token ? token.substring(0, 3) : "---";
-            b2.textContent = token ? token.substring(3, 6) : "---";
-            b3.style.display = "none";
-            b4.style.display = "none";
-            s2.style.display = "none";
-            s3.style.display = "none";
+        for (let i = 1; i <= 4; i++) {
+            const block = document.getElementById('block' + i);
+            if (i <= numGroups) {
+                const start = (i - 1) * groupSize;
+                block.textContent = token ? token.substring(start, start + groupSize) : '-'.repeat(groupSize);
+                block.style.display = 'inline';
+            } else {
+                block.style.display = 'none';
+            }
+        }
+        for (let i = 1; i <= 3; i++) {
+            document.getElementById('separator' + i).style.display = (i <= numGroups - 1) ? 'inline' : 'none';
         }
     }
 
@@ -557,10 +612,10 @@
         validateCode();
     }
 
-    // Formats a code by inserting spaces between blocks: 2 blocks of 3 (TOTP), 2 blocks of 4 (pass8), or 3 blocks of 4 (pass12)
+    // Formats a code by inserting spaces between groups (group size depends on the method)
     function formatCodeWithSpaces(code, method) {
         if (!code) return '';
-        const groupSize = (method === 'pass8' || method === 'pass12') ? 4 : 3;
+        const { groupSize } = getMethodConfig(method);
         const regex = new RegExp(`(.{${groupSize}})`, 'g');
         return code.replace(regex, '$1 ').trim();
     }
@@ -624,15 +679,14 @@
         const secret = document.getElementById('secretInput').value.trim();
         const dateStr = document.getElementById('dateInput').value;
         const method = getCurrentMethod();
+        const config = getMethodConfig(method);
         const rawCode = document.getElementById('valCodeInput').value.trim();
-        const isPass = method === 'pass8' || method === 'pass12';
-        const code = isPass
+        const code = config.isAlphanumeric
             ? rawCode.replace(/[^a-zA-Z0-9]/g, '')
             : rawCode.replace(/[^0-9]/g, '');
-        const expectedLength = method === 'pass12' ? 12 : method === 'pass8' ? 8 : 6;
         const resultBox = document.getElementById('resultBox');
 
-        if (!secret || !dateStr || code.length !== expectedLength) {
+        if (!secret || !dateStr || code.length !== config.codeLength) {
             resultBox.style.display = "none";
             return;
         }
@@ -640,7 +694,7 @@
         const targetDate = new Date(dateStr + "T12:00:00");
         const token = await generateCode(secret, targetDate, method);
 
-        const matches = isPass
+        const matches = config.isAlphanumeric
             ? (token && token.toLowerCase() === code.toLowerCase())
             : (token && token === code);
 
@@ -657,7 +711,7 @@
     // ==================== PAGE 2: FULL YEAR WITH DATATABLES ====================
     let dataTableInstance = null;
 
-    async function generateYearCSV() {
+    async function generateYearTable() {
         const secret = document.getElementById('secretInput').value.trim();
         const year = parseInt(document.getElementById('yearInput').value);
         const method = getCurrentMethod();
@@ -701,7 +755,7 @@
 
         preview.style.display = 'block';
 
-        const methodLabel = method === 'pass12' ? 'Pass12' : method === 'pass8' ? 'Pass8' : 'TOTP';
+        const methodLabel = getMethodConfig(method).label;
         document.getElementById('yearCodeHeader').textContent = `${methodLabel} Code`;
 
         // Inicializar DataTables con botones de exportación (CSV, Excel y PDF)
@@ -768,7 +822,7 @@
         // Restores the last chosen method (TOTP/Pass8/Pass12)
         let savedMethod = localStorage.getItem(METHOD_STORAGE_KEY);
         if (savedMethod === 'pass') savedMethod = 'pass12'; // migrate legacy internal name
-        if (savedMethod === 'totp' || savedMethod === 'pass8' || savedMethod === 'pass12') {
+        if (METHODS[savedMethod]) {
             document.getElementById('methodSelect').value = savedMethod;
         }
 
