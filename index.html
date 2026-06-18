@@ -187,7 +187,8 @@
                         <label for="methodSelect" class="navbar-field-label mb-0">Method</label>
                         <select id="methodSelect" class="form-select form-select-sm" style="width: auto;">
                             <option value="totp" selected>TOTP (6 digits)</option>
-                            <option value="pass">Pass (12 alphanumeric)</option>
+                            <option value="pass8">Pass (8 alphanumeric)</option>
+                            <option value="pass12">Pass (12 alphanumeric)</option>
                         </select>
                     </div>
                     <ul class="navbar-nav">
@@ -343,27 +344,28 @@
         return otplib.hotp.generate(secretBase32, dayCounter);
     }
 
-    // Generates a daily 12-character alphanumeric key (uppercase, lowercase, and digits),
-    // deterministically derived from the secret key + the day (same principle as TOTP).
-    async function generatePass(secretText, targetDate) {
+    // Generates a daily alphanumeric key (uppercase, lowercase, and digits) of the
+    // requested length, deterministically derived from the secret key + the day
+    // (same principle as TOTP). Used for both pass8 and pass12.
+    async function generatePass(secretText, targetDate, length) {
         if (!secretText?.trim()) return null;
         const dayCounter = Math.floor(targetDate.getTime() / 86400000);
         const encoder = new TextEncoder();
-        // The day counter is mixed into the hashed material so that each day has
-        // a distinct and reproducible key (same date + same key = same result).
-        const data = encoder.encode(secretText.trim() + "::pass::" + dayCounter);
+        // The day counter (and length) is mixed into the hashed material so that each
+        // day/variant has a distinct and reproducible key (same date + same key = same result).
+        const data = encoder.encode(secretText.trim() + "::pass" + length + "::" + dayCounter);
         const hashBuffer = await crypto.subtle.digest('SHA-256', data);
         const hashBytes = new Uint8Array(hashBuffer);
 
         const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         let result = "";
-        for (let i = 0; i < 12; i++) {
+        for (let i = 0; i < length; i++) {
             result += alphabet[hashBytes[i] % alphabet.length];
         }
         return result;
     }
 
-    // Returns the currently selected method: 'totp' or 'pass'
+    // Returns the currently selected method: 'totp', 'pass8' or 'pass12'
     function getCurrentMethod() {
         const el = document.getElementById('methodSelect');
         return el ? el.value : 'totp';
@@ -372,7 +374,9 @@
     // Generates the code based on the active method
     async function generateCode(secretText, targetDate, method) {
         const m = method || getCurrentMethod();
-        return m === 'pass' ? generatePass(secretText, targetDate) : generateTOTP(secretText, targetDate);
+        if (m === 'pass8') return generatePass(secretText, targetDate, 8);
+        if (m === 'pass12') return generatePass(secretText, targetDate, 12);
+        return generateTOTP(secretText, targetDate);
     }
 
     // ==================== SECRET KEY HISTORY (Select2) ====================
@@ -442,10 +446,14 @@
         const codeInput = document.getElementById('valCodeInput');
         const codeLabel = document.getElementById('valCodeLabel');
 
-        if (method === 'pass') {
+        if (method === 'pass12') {
             codeLabel.textContent = '12-character alphanumeric code';
             codeInput.setAttribute('maxlength', '14');
             codeInput.setAttribute('placeholder', 'AbCd 1234 EfGh');
+        } else if (method === 'pass8') {
+            codeLabel.textContent = '8-character alphanumeric code';
+            codeInput.setAttribute('maxlength', '9');
+            codeInput.setAttribute('placeholder', 'AbCd 1234');
         } else {
             codeLabel.textContent = '6-digit code';
             codeInput.setAttribute('maxlength', '8');
@@ -495,7 +503,7 @@
         const s2 = document.getElementById('separator2');
         const s3 = document.getElementById('separator3');
 
-        if (method === 'pass') {
+        if (method === 'pass12') {
             // 3 blocks of 4 characters
             b1.textContent = token ? token.substring(0, 4) : "----";
             b2.textContent = token ? token.substring(4, 8) : "----";
@@ -503,6 +511,14 @@
             b3.style.display = "inline";
             b4.style.display = "none";
             s2.style.display = "inline";
+            s3.style.display = "none";
+        } else if (method === 'pass8') {
+            // 2 blocks of 4 characters
+            b1.textContent = token ? token.substring(0, 4) : "----";
+            b2.textContent = token ? token.substring(4, 8) : "----";
+            b3.style.display = "none";
+            b4.style.display = "none";
+            s2.style.display = "none";
             s3.style.display = "none";
         } else {
             // 2 blocks of 3 digits (original TOTP behavior)
@@ -541,10 +557,10 @@
         validateCode();
     }
 
-    // Formats a code by inserting spaces between blocks: 2 blocks of 3 (TOTP) or 3 blocks of 4 (pass)
+    // Formats a code by inserting spaces between blocks: 2 blocks of 3 (TOTP), 2 blocks of 4 (pass8), or 3 blocks of 4 (pass12)
     function formatCodeWithSpaces(code, method) {
         if (!code) return '';
-        const groupSize = method === 'pass' ? 4 : 3;
+        const groupSize = (method === 'pass8' || method === 'pass12') ? 4 : 3;
         const regex = new RegExp(`(.{${groupSize}})`, 'g');
         return code.replace(regex, '$1 ').trim();
     }
@@ -609,10 +625,11 @@
         const dateStr = document.getElementById('dateInput').value;
         const method = getCurrentMethod();
         const rawCode = document.getElementById('valCodeInput').value.trim();
-        const code = method === 'pass'
+        const isPass = method === 'pass8' || method === 'pass12';
+        const code = isPass
             ? rawCode.replace(/[^a-zA-Z0-9]/g, '')
             : rawCode.replace(/[^0-9]/g, '');
-        const expectedLength = method === 'pass' ? 12 : 6;
+        const expectedLength = method === 'pass12' ? 12 : method === 'pass8' ? 8 : 6;
         const resultBox = document.getElementById('resultBox');
 
         if (!secret || !dateStr || code.length !== expectedLength) {
@@ -623,7 +640,7 @@
         const targetDate = new Date(dateStr + "T12:00:00");
         const token = await generateCode(secret, targetDate, method);
 
-        const matches = method === 'pass'
+        const matches = isPass
             ? (token && token.toLowerCase() === code.toLowerCase())
             : (token && token === code);
 
@@ -684,7 +701,7 @@
 
         preview.style.display = 'block';
 
-        const methodLabel = method === 'pass' ? 'Pass' : 'TOTP';
+        const methodLabel = method === 'pass12' ? 'Pass12' : method === 'pass8' ? 'Pass8' : 'TOTP';
         document.getElementById('yearCodeHeader').textContent = `${methodLabel} Code`;
 
         // Inicializar DataTables con botones de exportación (CSV, Excel y PDF)
@@ -748,9 +765,10 @@
         document.getElementById('dateInput').value = today;
         document.getElementById('yearInput').value = new Date().getFullYear();
 
-        // Restores the last chosen method (TOTP/Pass)
-        const savedMethod = localStorage.getItem(METHOD_STORAGE_KEY);
-        if (savedMethod === 'totp' || savedMethod === 'pass') {
+        // Restores the last chosen method (TOTP/Pass8/Pass12)
+        let savedMethod = localStorage.getItem(METHOD_STORAGE_KEY);
+        if (savedMethod === 'pass') savedMethod = 'pass12'; // migrate legacy internal name
+        if (savedMethod === 'totp' || savedMethod === 'pass8' || savedMethod === 'pass12') {
             document.getElementById('methodSelect').value = savedMethod;
         }
 
