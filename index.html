@@ -289,16 +289,33 @@
         <!-- PAGE 2: Full Year with DataTables -->
         <div id="page2" class="page" style="display: none;">
             <div class="card main-card p-4 p-md-5">
-                <h2 class="text-center mb-4">CSV Generator - Full Year</h2>
-                <p class="text-muted text-center mb-4">Uses the key from the top bar. From January 1st to December 31st</p>
+                <h2 class="text-center mb-4">CSV Generator</h2>
+                <p class="text-muted text-center mb-4">Uses the key from the top bar. Choose a full calendar year or a rolling last-365-days window.</p>
+
+                <div class="row mb-3 g-3 justify-content-center">
+                    <div class="col-md-10">
+                        <label class="form-label fw-semibold d-block">Range</label>
+                        <div class="btn-group w-100" role="group" aria-label="Generation range">
+                            <input type="radio" class="btn-check" name="rangeMode" id="modeYear" value="year" autocomplete="off" onchange="updateRangeModeUI()">
+                            <label class="btn btn-outline-primary" for="modeYear">Full Year (Jan 1 – Dec 31)</label>
+
+                            <input type="radio" class="btn-check" name="rangeMode" id="modeLast365" value="last365" autocomplete="off" checked onchange="updateRangeModeUI()">
+                            <label class="btn btn-outline-primary" for="modeLast365">Last 365 Days (up to today)</label>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="row mb-4 g-3 justify-content-center">
-                    <div class="col-md-5">
+                    <div class="col-md-5" id="yearInputWrap">
                         <label class="form-label fw-semibold">Year</label>
                         <input type="number" id="yearInput" class="form-control" min="2020" max="2100" value="2026">
                     </div>
+                    <div class="col-md-5" id="last365InfoWrap" style="display:none;">
+                        <label class="form-label fw-semibold">Date Range</label>
+                        <input type="text" id="last365InfoText" class="form-control" disabled>
+                    </div>
                     <div class="col-md-5 d-flex align-items-end">
-                        <button onclick="generateYearTable()" class="btn btn-primary w-100">Generate Full Year</button>
+                        <button onclick="generateYearTable()" id="generateBtn" class="btn btn-primary w-100">Generate Full Year</button>
                     </div>
                 </div>
 
@@ -506,6 +523,7 @@
 
     // ==================== METHOD SELECTOR (TOTP / Pass) ====================
     const METHOD_STORAGE_KEY = 'totp_app_method';
+    const RANGE_MODE_STORAGE_KEY = 'totp_app_range_mode';
 
     function updateMethodUI() {
         const method = getCurrentMethod();
@@ -537,7 +555,7 @@
     // ==================== RESET / DELETE ALL CONFIG ====================
     // All localStorage keys this app writes to, so "delete config" stays correct
     // if more settings are added later.
-    const CONFIG_STORAGE_KEYS = ['totp_ascii_secret', SECRET_HISTORY_KEY, METHOD_STORAGE_KEY];
+    const CONFIG_STORAGE_KEYS = ['totp_ascii_secret', SECRET_HISTORY_KEY, METHOD_STORAGE_KEY, RANGE_MODE_STORAGE_KEY];
 
     function resetAppConfig() {
         const confirmed = window.confirm(
@@ -708,24 +726,77 @@
         resultBox.style.display = "block";
     }
 
-    // ==================== PAGE 2: FULL YEAR WITH DATATABLES ====================
+    // ==================== PAGE 2: FULL YEAR / LAST 365 DAYS WITH DATATABLES ====================
     let dataTableInstance = null;
+
+    // Returns today's date (UTC midnight) and the date 365 days before it (also UTC midnight).
+    // Range is inclusive on both ends, as requested: [today - 365 days, today].
+    function getLast365Range() {
+        const now = new Date();
+        const endDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+        const startDate = new Date(endDate);
+        startDate.setUTCDate(startDate.getUTCDate() - 365);
+        return { startDate, endDate };
+    }
+
+    // Shows/hides the Year input vs the Last-365-Days info box depending on the
+    // selected radio button, and updates the generate button label accordingly.
+    function updateRangeModeUI() {
+        const mode = document.querySelector('input[name="rangeMode"]:checked').value;
+        localStorage.setItem(RANGE_MODE_STORAGE_KEY, mode);
+        const yearWrap = document.getElementById('yearInputWrap');
+        const last365Wrap = document.getElementById('last365InfoWrap');
+        const btn = document.getElementById('generateBtn');
+
+        if (mode === 'last365') {
+            yearWrap.style.display = 'none';
+            last365Wrap.style.display = '';
+            const { startDate, endDate } = getLast365Range();
+            document.getElementById('last365InfoText').value =
+                `${startDate.toISOString().split('T')[0]}  --->  ${endDate.toISOString().split('T')[0]} (today)`;
+            btn.textContent = 'Generate Last 365 Days';
+        } else {
+            yearWrap.style.display = '';
+            last365Wrap.style.display = 'none';
+            btn.textContent = 'Generate Full Year';
+        }
+    }
 
     async function generateYearTable() {
         const secret = document.getElementById('secretInput').value.trim();
-        const year = parseInt(document.getElementById('yearInput').value);
         const method = getCurrentMethod();
         const status = document.getElementById('status3');
         const preview = document.getElementById('yearPreview');
         const tbody = document.getElementById('previewBody');
+        const mode = document.querySelector('input[name="rangeMode"]:checked').value;
 
         if (!secret) {
             status.innerHTML = '<span class="text-danger">Please enter a secret key</span>';
             return;
         }
-        if (isNaN(year) || year < 2020 || year > 2100) {
-            status.innerHTML = '<span class="text-danger">Invalid year</span>';
-            return;
+
+        // Resolve the date range + labels/filenames depending on the selected mode
+        let startDate, totalDays, periodLabel, filenameBase;
+
+        if (mode === 'last365') {
+            const { startDate: s, endDate: e } = getLast365Range();
+            startDate = s;
+            totalDays = Math.round((e - s) / 86400000) + 1; // inclusive on both ends
+            const startStr = s.toISOString().split('T')[0];
+            const endStr = e.toISOString().split('T')[0];
+            periodLabel = `Last 365 Days (${startStr} to ${endStr})`;
+            filenameBase = `Last365Days_${startStr}_to_${endStr}`;
+        } else {
+            const year = parseInt(document.getElementById('yearInput').value);
+            if (isNaN(year) || year < 2020 || year > 2100) {
+                status.innerHTML = '<span class="text-danger">Invalid year</span>';
+                return;
+            }
+            startDate = new Date(Date.UTC(year, 0, 1));
+            const isLeap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
+            totalDays = isLeap ? 366 : 365;
+            periodLabel = `Year ${year}`;
+            filenameBase = `${year}`;
         }
 
         status.textContent = 'Generating codes...';
@@ -737,11 +808,7 @@
             dataTableInstance = null;
         }
 
-        const startDate = new Date(Date.UTC(year, 0, 1));
-        const isLeap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
-        const daysInYear = isLeap ? 366 : 365;
-
-        for (let i = 0; i < daysInYear; i++) {
+        for (let i = 0; i < totalDays; i++) {
             const date = new Date(startDate);
             date.setUTCDate(startDate.getUTCDate() + i);
 
@@ -764,7 +831,7 @@
                 url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/en-GB.json'
             },
             pageLength: 25,
-            order: [[0, 'asc']],
+            order: [[0, 'desc']],
             searching: true,
             responsive: true,
             dom: 'Bfrtip',
@@ -772,19 +839,19 @@
                 {
                     extend: 'csvHtml5',
                     text: '📄 Export CSV',
-                    filename: () => `${methodLabel}_${document.getElementById('yearInput').value}`
+                    filename: () => `${methodLabel}_${filenameBase}`
                 },
                 {
                     extend: 'excelHtml5',
                     text: '📊 Export Excel',
-                    filename: () => `${methodLabel}_${document.getElementById('yearInput').value}`,
-                    title: () => `${methodLabel} Codes - Year ${document.getElementById('yearInput').value}`
+                    filename: () => `${methodLabel}_${filenameBase}`,
+                    title: () => `${methodLabel} Codes - ${periodLabel}`
                 },
                 {
                     extend: 'pdfHtml5',
                     text: '🧾 Export PDF',
-                    filename: () => `${methodLabel}_${document.getElementById('yearInput').value}`,
-                    title: () => `${methodLabel} Codes - Year ${document.getElementById('yearInput').value}`,
+                    filename: () => `${methodLabel}_${filenameBase}`,
+                    title: () => `${methodLabel} Codes - ${periodLabel}`,
                     orientation: 'portrait',
                     pageSize: 'A4'
                 }
@@ -826,7 +893,15 @@
             document.getElementById('methodSelect').value = savedMethod;
         }
 
+        // Restores the last chosen range mode (Full Year / Last 365 Days); defaults to last365
+        const savedRangeMode = localStorage.getItem(RANGE_MODE_STORAGE_KEY);
+        if (savedRangeMode === 'year' || savedRangeMode === 'last365') {
+            const radio = document.querySelector(`input[name="rangeMode"][value="${savedRangeMode}"]`);
+            if (radio) radio.checked = true;
+        }
+
         showPage(1);
+        updateRangeModeUI();
 
         // Event: global secret key (Select2, with history)
         $('#secretInput').on('change.appSecret', function () {
